@@ -328,7 +328,7 @@ app.get("/login",function(req,res){
 // login logic
 app.post("/login",passport.authenticate("local",
 {
-	successRedirect:"/",
+	successRedirect:"/show",
 	failureRedirect:"/login",
 	failureFlash: true,
 	successFlash: 'Welcome to XMeme!'
@@ -340,7 +340,7 @@ app.post("/login",passport.authenticate("local",
 app.get("/logout",function(req,res){
 	req.logout();
 	req.flash("success","Logged you out successfully!")
-	res.redirect("/");
+	res.redirect("/show");
 });
 
 // handling PATCH request to update likes
@@ -372,7 +372,7 @@ app.patch("/like/:id",function(req,res){
 			   } 
 			   else 
 			   {
-				  res.redirect("/");
+				  res.redirect("/show");
 			   }
              });
 		   }
@@ -409,7 +409,7 @@ app.patch("/dislike/:id",function(req,res){
 			   } 
 			   else 
 			   {
-				  res.redirect("/");
+				  res.redirect("/show");
 			   }
              });
 		   }
