@@ -18,6 +18,29 @@ var memes=require("./models/meme_model");
 // For overiding methods like post,get
 var methodOverride=require("method-override");
 
+var multer = require('multer');
+var storage = multer.diskStorage({
+  filename: function(req, file, callback) {
+    callback(null, Date.now() + file.originalname);
+  }
+});
+var imageFilter = function (req, file, cb) {
+    // accept image files only
+    if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/i)) {
+        return cb(new Error('Only image files are allowed!'), false);
+    }
+    cb(null, true);
+};
+var upload = multer({ storage: storage, fileFilter: imageFilter})
+
+var cloudinary = require('cloudinary');
+cloudinary.config({ 
+  cloud_name: 'mayankyelpcamp', 
+  api_key: '695615761195623', 
+  api_secret: 'aZcDA_HUasllxKc4Aui59dyLgXo'
+});
+
+
 // Creating object of express 
 var app=express();
 
@@ -65,7 +88,7 @@ app.use(function(req,res,next){
 });
 
 // Local Connection to DB
-mongoose.connect("mongodb://localhost:27017/meme_data",{useNewUrlParser:true,useUnifiedTopology:true}).then(() =>{
+mongoose.connect("mongodb://localhost:27017/meme_data1",{useNewUrlParser:true,useUnifiedTopology:true}).then(() =>{
 	console.log("connected to db")}).catch(err=>{
 	console.log("ERROR : ",err.message)});
 
@@ -80,13 +103,13 @@ app.get("/",function(req,res){
         } 
 		else
 		{
-			res.render("home/home_page",{memes:allMemes.slice(-100).reverse()});
+			res.render("home/home_page");
         }
     });
 });
 
 // handling POST request for https://<Server_URL>/
-app.post("/",function(req,res){
+app.post("/",upload.single('image'),function(req,res){
 	//console.log(req.user);
 	var creator;
 	if(req.user)
@@ -95,7 +118,14 @@ app.post("/",function(req,res){
 		creator=req.body.name;
 	var url=req.body.url;
 	var title=req.body.caption;
-	var newMeme={owner_name:creator,meme_url:url,caption:title};
+	var type=req.body.type;
+	
+	if(url=='')
+		{ 
+			cloudinary.uploader.upload(req.file.path, function(result) {
+  // add cloudinary url for the image to the campground object under image property
+ 		 url= result.secure_url;
+		 var newMeme={owner_name:creator,meme_url:url,caption:title,type:type};
 	
 	memes.find({caption: title, meme_url: url}, function(err, allMemes){
 		  if(err)
@@ -112,7 +142,7 @@ app.post("/",function(req,res){
 		             else
 		             { 
 					   req.flash("success","Successfully posted meme!");
-			           res.redirect("/");
+			           res.redirect("/show");
 		             }
 				  });
 			  }
@@ -123,8 +153,69 @@ app.post("/",function(req,res){
 			  }
 		   }							   
 	});	
+			
+			});
+		}
+	else{
+		var newMeme={owner_name:creator,meme_url:url,caption:title,type:type};
+	
+	memes.find({caption: title, meme_url: url}, function(err, allMemes){
+		  if(err)
+		  {
+              console.log(err);
+          } 
+		  else 
+		  {
+              if(allMemes.length < 1) 
+			  {
+	              memes.create(newMeme,function(err,mm){
+		             if(err)
+			             console.log("error");
+		             else
+		             { 
+					   req.flash("success","Successfully posted meme!");
+			           res.redirect("/show");
+		             }
+				  });
+			  }
+			  else
+			  {
+				  req.flash("error","This meme already exists!");
+			      res.redirect("/");
+			  }
+		   }							   
+	});	
+	}
+	
+	
 });
 
+app.get("/show",function(req,res){
+	
+	memes.find({}, function(err, allMemes){
+        if(err)
+		{
+               console.log(err);
+        } 
+		else
+		{
+			res.render("show",{memes:allMemes.slice(-100).reverse()});
+        }
+    });
+});
+app.get("/show/:type",function(req,res){
+	
+	memes.find({type:req.params.type}, function(err, allMemes){
+        if(err)
+		{
+               console.log(err);
+        } 
+		else
+		{
+			res.render("show",{memes:allMemes.slice(-100).reverse()});
+        }
+    });
+});
 // handling GET request for https://<Server_URL>/memes
 app.get("/memes",function(req,res){
 	memes.find({}, function(err, allMemes){
@@ -289,6 +380,42 @@ app.patch("/like/:id",function(req,res){
 	}
 });
 
+// handling PATCH request to update dislikes
+app.patch("/dislike/:id",function(req,res){
+	var id =req.params.id;
+	if(!req.user)
+	{
+		req.flash("error","You have to login first to like ");
+		res.redirect("/login");
+	}
+	else
+	{
+	memes.findById(id,function(err, meme){
+           if(err)
+		   {
+			   res.status(404).send("Invalid ID");
+               console.log(err);
+           } 
+		   else 
+		   {
+			 var lusers= meme.dislikedUsers;
+			 var dislikes= meme.dislikes+1;
+			 lusers.push(req.user._id);
+			   
+             memes.findByIdAndUpdate(id,{dislikedUsers:lusers,dislikes:dislikes},function(err, meme){
+			   if(err)
+			   {
+				   console.log(err);
+			   } 
+			   else 
+			   {
+				  res.redirect("/");
+			   }
+             });
+		   }
+        });
+	}
+});
 // to handle unknown request 
 app.get("/:dummy",function(req,res){
 	res.status(404).send("Page Doesnot exist!");

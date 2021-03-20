@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<!-- Make site responsive on mobile/tablet -->
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<title>XMEME</title>
+		<link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  		<link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+		<link rel="stylesheet" href="/stylesheets/main.css">
+	</head>
+	<body>
+
+	<div id="fb-root"></div>
+    <script async defer crossorigin="anonymous" 	src="https://connect.facebook.net/en_GB/sdk.js#xfbml=1&version=v9.0" nonce="QD7qH5VY"></script>
+		
+	<nav class="navbar navbar-default">
+    <div class="container">
+        <div class="navbar-header">
+			<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+              <span class="sr-only">Toggle navigation</span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/show">X-MEME</a>
+			<a class="navbar-brand" href="/">Wanna Post?</a>
+        </div>
+		<div id="navbar" class="collapse navbar-collapse">
+			 <ul class="nav navbar-nav navbar-center">
+				 <li><a href="/show/politics">Politics</a></li>
+              	 <li><a href="/show/bollywood">Bollywood</a></li>
+          </ul>
+	     <ul class="nav navbar-nav navbar-right">
+              <% if(!currentuser){ %>
+                  <li><a href="/login">Login</a></li>
+                  <li><a href="/register">Sign Up</a></li>
+              <% } else { %>
+                  <li><a href="#">Signed In As <%= currentuser.username %></a></li>
+                  <li><a href="/logout">Logout</a></li>
+              <% } %>
+          </ul>
+		</div>
+    </div>
+	</nav>
+	<div class="container">
+		<% if(error && error.length>0){ %>
+		<div class="alert alert-danger" role="alert">
+			<%=error%>
+		</div>
+		<%}%>
+		<% if(success && success.length>0){ %>
+		<div class="alert alert-success" role="alert">
+			<%=success%>
+		</div>
+		<%}%>
+	</div>
+    <h1 style="text-align: center">XMEME - Space of Memes</h1>
+  
+		<div class="row justify-content-md-center">
+	<div class="col col-xs-12 col-lg-6 col-md-6 col-md-offset-3">
+	<div class="container" style="height: 400px; width: 100%;overflow:scroll ">
+	<% memes.forEach(function(CG){ %>
+	
+    <div class="thumbnail">
+		<% if (currentuser && (CG.dislikedUsers).indexOf(currentuser._id)!=-1) { %>
+	
+		<button class="btn btn-md btn-danger btn-block like pull-right" style="width:10%;margin-top:4px;margin-left:0;padding: 4px 4px;">
+			<i class="fa fa-thumbs-o-down fa-lg" aria-hidden="true"></i>   <%=CG.dislikes%></button>
+				<%} else {%>
+		<form action="/dislike/<%=CG._id%>?_method=PATCH" method="POST">
+				<button class="btn btn-md btn-danger btn-block like pull-right" style="width:10%;margin-top:4px;margin-left:0;padding: 4px 4px;border: 2px solid #d9534f;color:#d9534f;background-color: white;">
+			<i class="fa fa-thumbs-o-down fa-lg" aria-hidden="true"></i>   <%=CG.dislikes%></button>
+				
+		</form>
+		<% }%>
+		<% if (currentuser && (CG.likedUsers).indexOf(currentuser._id)!=-1) { %>
+	
+		<button class="btn btn-md btn-primary btn-block like pull-right" style="width:10%;margin-top:4px;margin-left:0;padding: 4px 4px;">
+			<i class="fa fa-thumbs-o-up fa-lg" aria-hidden="true"></i>   <%=CG.likes%></button>
+				<%} else {%>
+		<form action="/like/<%=CG._id%>?_method=PATCH" method="POST">
+				<button class="btn btn-md btn-primary btn-block like pull-right" style="width:10%;margin-top:4px;margin-left:0;padding: 4px 4px;border: 2px solid #0275d8;color:#0275d8;background-color: white;">
+			<i class="fa fa-thumbs-o-up fa-lg" aria-hidden="true"></i>   <%=CG.likes%></button>
+				
+		</form>
+		<% }%>
+    	<h4 class="pull-right" style="margin-right:10px;"><%= moment(CG.createdAt).fromNow() %></h4>
+		<h4 style="margin-left:10px;"><i class="fa fa-lg fa-user-circle" aria-hidden="true"></i><strong> <%= CG.owner_name %></strong></h4>
+        <p style="margin-left:10px;"> <%= CG.caption %></p>
+	    <img width="100%" height="100%" class="img-responsive" src="<%= CG.meme_url %>">
+	</div>
+		
+	 <% }); %>
+</div>
+		</div>
+		</div>
+	
+<!-- jQuery CDN -->
+<script
+  src="https://code.jquery.com/jquery-3.1.1.min.js"
+  integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="
+  crossorigin="anonymous"></script>
+
+<!-- Bootstrap JS CDN -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+	</body>
+</html>
